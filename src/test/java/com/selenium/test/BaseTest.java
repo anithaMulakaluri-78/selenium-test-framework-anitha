@@ -27,7 +27,6 @@ public class BaseTest{
 	public void setup()
 	{
 		String environment = System.getProperty("environment", "qa");
-		
 		ConfigReader config=new ConfigReader(environment);
 		String browser=config.getProperty("browser");
 		String url=config.getProperty("baseUrl");
