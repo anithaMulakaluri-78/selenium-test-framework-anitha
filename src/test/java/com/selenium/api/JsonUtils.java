@@ -2,13 +2,10 @@ package com.selenium.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -22,12 +19,14 @@ public final class JsonUtils {
     private JsonUtils() {
     }
 
+    /** Reads a test resource from the classpath; works on Windows and packaged resources. */
     public static String read(String classpathFile) throws IOException {
-        var resource = JsonUtils.class.getClassLoader().getResource(classpathFile);
-        if (resource == null) {
-            throw new IllegalArgumentException("Resource not found: " + classpathFile);
+        try (InputStream inputStream = JsonUtils.class.getClassLoader().getResourceAsStream(classpathFile)) {
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Resource not found on classpath: " + classpathFile);
+            }
+            return new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         }
-        return Files.readString(Path.of(resource.getFile()));
     }
 
     public static JsonNode readJson(String classpathFile) throws IOException {
