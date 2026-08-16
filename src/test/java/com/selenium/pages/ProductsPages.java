@@ -60,9 +60,6 @@ public class ProductsPages {
 		List<Integer> sortedPrices = new ArrayList<>(actualPrices);
 
 		Collections.sort(sortedPrices);
-
-		alert.isAlertPresent();
-		alert.acceptAlert();
 		return actualPrices.equals(sortedPrices);
 		
 	}
