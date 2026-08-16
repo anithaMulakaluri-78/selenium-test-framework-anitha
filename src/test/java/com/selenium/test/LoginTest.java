@@ -32,7 +32,7 @@ public class LoginTest extends BaseTest {
 	   loginPage.login("standard_user", "secret_sauce");
 	   ProductsPages product=new ProductsPages(DriverManager.getDriver());
 	   product.sortByLowtoHighTest();
-	  Assert.assertFalse(product.isPriceSortedLowToHigh(), "Products are not sorted"); 
+	  Assert.assertTrue(product.isPriceSortedLowToHigh(), "Products are not sorted"); 
 	   
    }
    /*
