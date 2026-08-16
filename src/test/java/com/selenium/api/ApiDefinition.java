@@ -7,6 +7,8 @@ public record ApiDefinition(
         String method,
         String endpoint,
         Map<String, String> headers,
+        Map<String, String> pathParams,
+        Map<String, String> queryParams,
         String payloadFile,
         Integer expectedStatus,
         String expectedResponseFile,
