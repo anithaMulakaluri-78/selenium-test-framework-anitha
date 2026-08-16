@@ -1,0 +1,13 @@
+{
+  "name": "CreateBooking",
+  "method": "POST",
+  "endpoint": "/booking",
+  "headers": {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  "payloadFile": "createBooking.json",
+  "expectedStatus": 200,
+  "expectedResponseFile": null,
+  "schemaFile": "create-booking-response-schema.json"
+}

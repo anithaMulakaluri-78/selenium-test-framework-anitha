@@ -1,0 +1,12 @@
+{
+  "name": "GetBooking",
+  "method": "GET",
+  "endpoint": "/booking/1",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "payloadFile": null,
+  "expectedStatus": 200,
+  "expectedResponseFile": null,
+  "schemaFile": "booking-response-schema.json"
+}
