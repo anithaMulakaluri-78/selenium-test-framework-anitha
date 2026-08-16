@@ -24,8 +24,18 @@ public class ApiClient {
                     JsonUtils.read("api/payloads/" + definition.payloadFile()));
         }
 
-        RequestSpecification request = RestAssured.given()
-                .log().all();
+        String endpoint = definition.endpoint();
+        String fullUrl = RestAssured.baseURI + endpoint;
+
+        System.out.println("\n========== API REQUEST ==========");
+        System.out.println("NAME   : " + definition.name());
+        System.out.println("METHOD : " + definition.method());
+        System.out.println("URL    : " + fullUrl);
+        System.out.println("HEADERS: " + definition.headers());
+        System.out.println("BODY   : " + (payload == null ? "<none>" : payload));
+        System.out.println("=================================\n");
+
+        RequestSpecification request = RestAssured.given();
 
         if (definition.headers() != null) {
             for (Map.Entry<String, String> header : definition.headers().entrySet()) {
@@ -37,7 +47,6 @@ public class ApiClient {
             request.body(payload);
         }
 
-        String endpoint = definition.endpoint();
         Response response = switch (definition.method().toUpperCase()) {
             case "GET" -> request.get(endpoint);
             case "POST" -> request.post(endpoint);
@@ -47,9 +56,7 @@ public class ApiClient {
             default -> throw new IllegalArgumentException("Unsupported HTTP method: " + definition.method());
         };
 
-        System.out.println("\n========== API RESPONSE ==========");
-        System.out.println("METHOD : " + definition.method());
-        System.out.println("URL    : " + response.getDetailedCookies());
+        System.out.println("========== API RESPONSE ==========");
         System.out.println("STATUS : " + response.statusCode());
         System.out.println("TIME   : " + response.time() + " ms");
         System.out.println("BODY   : " + response.asPrettyString());
