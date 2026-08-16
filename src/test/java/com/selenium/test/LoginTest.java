@@ -17,7 +17,7 @@ public class LoginTest extends BaseTest {
 		System.out.println(DriverManager.getDriver().getTitle());
 	}
    @Parameters("chrome")
-	@Test
+   @Test(groups = "smoke")
 	public void validLoginTest() {
 
 		LoginPages loginPage = new LoginPages(DriverManager.getDriver());
@@ -26,7 +26,7 @@ public class LoginTest extends BaseTest {
 
 		Assert.assertTrue(DriverManager.getDriver().getCurrentUrl().contains("inventory.html"));
 	}
-   @Test
+   @Test(groups = "smoke")
    public void sortByPrice() throws InterruptedException {
 	   LoginPages loginPage = new LoginPages(DriverManager.getDriver());
 	   loginPage.login("standard_user", "secret_sauce");
