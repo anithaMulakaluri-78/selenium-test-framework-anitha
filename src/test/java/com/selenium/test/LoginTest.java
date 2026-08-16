@@ -19,7 +19,6 @@ public class LoginTest extends BaseTest {
    @Parameters("chrome")
 	@Test
 	public void validLoginTest() {
-
 		LoginPages loginPage = new LoginPages(DriverManager.getDriver());
 
 		loginPage.login("standard_user", "secret_sauce");
