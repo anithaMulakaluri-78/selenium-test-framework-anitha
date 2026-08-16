@@ -1,0 +1,20 @@
+# Maven
+target/
+
+# TestNG / Reports
+test-output/
+
+# Screenshots
+screenshots/
+
+# Logs
+logs/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# IntelliJ
+.idea/
+*.iml
