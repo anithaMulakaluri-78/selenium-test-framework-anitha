@@ -18,20 +18,26 @@ public class ApiClient {
         ApiDefinition definition = mapper.readValue(
                 JsonUtils.read("api/definitions/" + definitionFile), ApiDefinition.class);
 
+        String endpoint = definition.endpoint();
+        if (definition.pathParams() != null) {
+            for (Map.Entry<String, String> param : definition.pathParams().entrySet()) {
+                endpoint = endpoint.replace("{" + param.getKey() + "}", param.getValue());
+            }
+        }
+
         String payload = null;
         if (definition.payloadFile() != null && !definition.payloadFile().isBlank()) {
             payload = JsonUtils.resolveDynamicValues(
                     JsonUtils.read("api/payloads/" + definition.payloadFile()));
         }
 
-        String endpoint = definition.endpoint();
         String fullUrl = RestAssured.baseURI + endpoint;
-
         System.out.println("\n========== API REQUEST ==========");
         System.out.println("NAME   : " + definition.name());
         System.out.println("METHOD : " + definition.method());
         System.out.println("URL    : " + fullUrl);
         System.out.println("HEADERS: " + definition.headers());
+        System.out.println("QUERY  : " + definition.queryParams());
         System.out.println("BODY   : " + (payload == null ? "<none>" : payload));
         System.out.println("=================================\n");
 
@@ -42,7 +48,11 @@ public class ApiClient {
                 request.header(header.getKey(), header.getValue());
             }
         }
-
+        if (definition.queryParams() != null) {
+            for (Map.Entry<String, String> param : definition.queryParams().entrySet()) {
+                request.queryParam(param.getKey(), param.getValue());
+            }
+        }
         if (payload != null) {
             request.body(payload);
         }
@@ -65,11 +75,9 @@ public class ApiClient {
         if (definition.expectedStatus() != null) {
             response.then().statusCode(definition.expectedStatus());
         }
-
         if (definition.schemaFile() != null && !definition.schemaFile().isBlank()) {
             response.then().body(matchesJsonSchemaInClasspath("api/schemas/" + definition.schemaFile()));
         }
-
         if (definition.expectedResponseFile() != null && !definition.expectedResponseFile().isBlank()) {
             String expected = JsonUtils.read("api/expected/" + definition.expectedResponseFile());
             if (!JsonUtils.structurallyEqual(expected, response.asString())) {
@@ -77,7 +85,6 @@ public class ApiClient {
                         + expected + "\nActual:\n" + response.asPrettyString());
             }
         }
-
         return response;
     }
 }
