@@ -1,0 +1,150 @@
+name: CI Quality Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches: [master, develop]
+
+# Cancel older runs on the same PR when new commits land
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ────────────────────────────────────────────────────────────
+  # 1a. Branch naming check
+  # ────────────────────────────────────────────────────────────
+  branch-naming-check:
+    name: Branch Naming Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          echo "Checking branch: $BRANCH_NAME"
+          # Allowed patterns: feature/..., bugfix/..., hotfix/..., release/..., chore/...
+          # Example valid names: feature/QA-123-add-login-tests, bugfix/QA-456-flaky-checkout-test
+          PATTERN='^(feature|bugfix|hotfix|release|chore)\/[A-Z]+-[0-9]+-[a-z0-9-]+$'
+          if [[ ! "$BRANCH_NAME" =~ $PATTERN ]]; then
+            echo "::error::Branch name '$BRANCH_NAME' does not match required pattern: $PATTERN"
+            echo "Expected format: <type>/<TICKET-ID>-<short-description>"
+            echo "Example: feature/QA-123-add-login-tests"
+            exit 1
+          fi
+          echo "Branch name is valid."
+
+  # ────────────────────────────────────────────────────────────
+  # 1b. Commit message check
+  # ────────────────────────────────────────────────────────────
+  commit-message-check:
+    name: Commit Message Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Conventional-commit style with mandatory ticket ref, e.g.:
+          # "feat(QA-123): add login smoke test"
+          # "fix(QA-456): correct locator for checkout button"
+          PATTERN='^(feat|fix|test|chore|refactor|docs|style|perf)\([A-Z]+-[0-9]+\): .{10,}$'
+
+          echo "Checking commits between $BASE_SHA and $HEAD_SHA"
+          FAILED=0
+
+          while IFS= read -r line; do
+            SHA=$(echo "$line" | cut -d' ' -f1)
+            MSG=$(echo "$line" | cut -d' ' -f2-)
+            if [[ ! "$MSG" =~ $PATTERN ]]; then
+              echo "::error::Commit $SHA has invalid message: '$MSG'"
+              FAILED=1
+            fi
+          done < <(git log --pretty=format:"%h %s" "$BASE_SHA..$HEAD_SHA")
+
+          if [[ "$FAILED" -eq 1 ]]; then
+            echo "One or more commit messages do not match required pattern: $PATTERN"
+            echo "Expected format: <type>(<TICKET-ID>): <description>"
+            echo "Example: feat(QA-123): add login smoke test"
+            exit 1
+          fi
+          echo "All commit messages are valid."
+
+  # ────────────────────────────────────────────────────────────
+  # 1c. Compile / coding standards check
+  # ────────────────────────────────────────────────────────────
+  compile-standards-check:
+    name: Compile & Standards Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile
+        run: mvn -B -ntp clean compile test-compile
+
+      - name: Checkstyle
+        run: mvn -B -ntp checkstyle:check
+        # If you don't have the checkstyle plugin configured yet in pom.xml,
+        # replace this step with your standards tool of choice (PMD, SpotBugs, etc.)
+        # or remove it until one is set up.
+
+  # ────────────────────────────────────────────────────────────
+  # 2. Smoke Tests — only runs once all three gate checks pass
+  # ────────────────────────────────────────────────────────────
+  smoke-tests:
+    name: Smoke Tests
+    needs: [branch-naming-check, commit-message-check, compile-standards-check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run smoke tests
+        run: mvn -B -ntp test -Dgroups=smoke -DfailIfNoTests=false
+        # Assumes TestNG with a "smoke" group, e.g. @Test(groups = "smoke").
+        # For JUnit 5 tags instead, use: mvn test -Dgroups=smoke → -Dtags=smoke
+        # or -Dtest=**/*SmokeTest depending on your naming convention.
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-report
+          path: target/surefire-reports/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────
+  # 3. Merge gate — single required status check for branch protection
+  # ────────────────────────────────────────────────────────────
+  quality-gate:
+    name: Quality Gate
+    needs: [smoke-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Evaluate gate result
+        run: |
+          if [[ "${{ needs.smoke-tests.result }}" != "success" ]]; then
+            echo "::error::Quality Gate FAILED — merge blocked."
+            exit 1
+          fi
+          echo "Quality Gate PASSED — merge allowed."
