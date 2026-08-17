@@ -1,11 +1,11 @@
 {
-  "firstname": "${randomName}",
-  "lastname": "${randomName}",
-  "totalprice": 150,
-  "depositpaid": true,
+  "firstname": "${firstname}",
+  "lastname": "${lastname}",
+  "totalprice": "${totalprice}",
+  "depositpaid": "${depositpaid}",
   "bookingdates": {
-    "checkin": "2026-09-01",
-    "checkout": "2026-09-05"
+    "checkin": "${checkin}",
+    "checkout": "${checkout}"
   },
-  "additionalneeds": "Breakfast"
+  "additionalneeds": "${additionalneeds}"
 }
