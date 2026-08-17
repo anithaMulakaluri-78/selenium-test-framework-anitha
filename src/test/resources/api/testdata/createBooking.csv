@@ -1,0 +1,4 @@
+testCase,firstname,lastname,totalprice,depositpaid,checkin,checkout,additionalneeds
+TC001,Anitha,Lakshmi,150,true,2026-09-01,2026-09-05,Breakfast
+TC002,Ravi,Kumar,250,false,2026-10-01,2026-10-10,Lunch
+TC003,John,Smith,500,true,2026-11-15,2026-11-20,Dinner
